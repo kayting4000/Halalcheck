@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "67067428466",
+    "project_id": "halalscanner-c7667",
+    "storage_bucket": "halalscanner-c7667.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:67067428466:android:cc70642e12d771dfa8cceb",
+        "android_client_info": {
+          "package_name": "com.halalscanner.halalscanner"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "67067428466-d3caal4j28g5m823ql1ql30poe7c9je3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.halalscanner.halalscanner",
+            "certificate_hash": "562a65ea4731664a18d1eeaa95fb9b6a75721263"
+          }
+        },
+        {
+          "client_id": "67067428466-t9as9g43s9c76ov3ffbkkidirl2ghc9c.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvw2tRSact7mVVK9dz91WZJgLS6Mfle-o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "67067428466-t9as9g43s9c76ov3ffbkkidirl2ghc9c.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
