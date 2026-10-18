@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../services/gemini_service.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import '../services/ocr_service.dart';
+import '../services/barcode_service.dart';
+import '../services/halal_engine.dart';
 import '../models/halal_location.dart';
 import '../widgets/app_theme.dart';
+
+enum _ScanMode { ingredient, barcode }
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -21,6 +26,10 @@ class _ScannerScreenState extends State<ScannerScreen> with WidgetsBindingObserv
   AnalysisResult? _result;
   String? _error;
   String _status = 'Initializing Scan...';
+  _ScanMode _mode = _ScanMode.ingredient;
+  final MobileScannerController _barcodeController =
+      MobileScannerController(detectionSpeed: DetectionSpeed.noDuplicates);
+  bool _barcodeHandled = false;
 
   @override
   void initState() {
@@ -77,24 +86,26 @@ class _ScannerScreenState extends State<ScannerScreen> with WidgetsBindingObserv
       _isAnalyzing = true;
       _result = null;
       _error = null;
-      _status = 'Capturing Ingredients...';
+      _status = 'Reading Ingredients...';
     });
 
     try {
       final file = await _controller!.takePicture();
-      final bytes = await file.readAsBytes();
 
-      // Pause camera preview
+      // Pause camera preview while we run on-device OCR.
       await _controller?.pausePreview();
 
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) setState(() => _status = 'Isolating Molecules...');
-      });
-      Future.delayed(const Duration(seconds: 2), () {
-        if (mounted) setState(() => _status = 'Checking Halal DB...');
+      Future.delayed(const Duration(milliseconds: 400), () {
+        if (mounted) setState(() => _status = 'Extracting Text (On-Device)...');
       });
 
-      final result = await GeminiService.analyzeIngredients(bytes);
+      // 1) On-device OCR reads the ingredient label (no cloud API).
+      final text = await OcrService.readText(file.path);
+
+      if (mounted) setState(() => _status = 'Checking Halal Rules...');
+
+      // 2) Offline rules engine decides halal status.
+      final result = HalalEngine.analyze(text);
       setState(() => _result = result);
     } catch (e) {
       setState(() => _error = e.toString());
@@ -105,12 +116,55 @@ class _ScannerScreenState extends State<ScannerScreen> with WidgetsBindingObserv
     }
   }
 
+  /// Handles a detected barcode by looking it up in Open Food Facts and then
+  /// running the offline halal rules engine.
+  Future<void> _handleBarcode(String barcode) async {
+    if (_barcodeHandled) return;
+    _barcodeHandled = true;
+    setState(() {
+      _isAnalyzing = true;
+      _result = null;
+      _error = null;
+      _status = 'Looking up Product...';
+    });
+    try {
+      final result = await BarcodeService.lookupBarcode(barcode);
+      if (mounted) setState(() => _result = result);
+    } catch (e) {
+      setState(() => _error = e.toString());
+      // Allow another scan attempt after a short delay.
+      Future.delayed(const Duration(seconds: 2), () => _barcodeHandled = false);
+    } finally {
+      if (mounted) setState(() => _isAnalyzing = false);
+    }
+  }
+
+  void _setMode(_ScanMode mode) {
+    if (_mode == mode) return;
+    setState(() {
+      _mode = mode;
+      _result = null;
+      _error = null;
+      _barcodeHandled = false;
+    });
+    if (mode == _ScanMode.barcode) {
+      // Release the camera plugin so MobileScanner can use it exclusively.
+      _controller?.dispose().then((_) {
+        if (mounted) setState(() => _controller = null);
+      });
+    } else {
+      // Returning to ingredient mode: re-acquire the camera.
+      if (_controller == null) _startCamera();
+    }
+  }
+
   void _reset() {
     setState(() {
       _result = null;
       _error = null;
+      _barcodeHandled = false;
     });
-    // Resume camera preview
+    // Resume ingredient camera preview (no-op in barcode mode).
     _controller?.resumePreview();
   }
 
@@ -118,6 +172,7 @@ class _ScannerScreenState extends State<ScannerScreen> with WidgetsBindingObserv
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
+    _barcodeController.dispose();
     super.dispose();
   }
 
@@ -127,11 +182,35 @@ class _ScannerScreenState extends State<ScannerScreen> with WidgetsBindingObserv
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Camera preview
-          if (_controller != null && _controller!.value.isInitialized)
-            Positioned.fill(child: CameraPreview(_controller!))
+          // --- Mode-specific live view ---
+          if (_mode == _ScanMode.ingredient)
+            // Ingredient mode: standard camera preview
+            if (_controller != null && _controller!.value.isInitialized)
+              Positioned.fill(child: CameraPreview(_controller!))
+            else
+              const Center(child: CircularProgressIndicator(color: AppColors.magenta))
           else
-            const Center(child: CircularProgressIndicator(color: AppColors.magenta)),
+            // Barcode mode: ML Kit barcode scanner
+            Positioned.fill(
+              child: MobileScanner(
+                controller: _barcodeController,
+                onDetect: (capture) {
+                  final barcodes = capture.barcodes;
+                  if (barcodes.isEmpty) return;
+                  final value = barcodes.first.rawValue;
+                  if (value != null && value.isNotEmpty) {
+                    _handleBarcode(value);
+                  }
+                },
+              ),
+            ),
+
+          // --- Mode switcher (top center) ---
+          if (_result == null && !_isAnalyzing)
+            Positioned(top: 55, left: 0, right: 0, child: _ModeSwitcher(
+              mode: _mode,
+              onChanged: _setMode,
+            )),
 
           // Scanning overlay
           if (!_isAnalyzing && _result == null)
@@ -157,9 +236,11 @@ class _ScannerScreenState extends State<ScannerScreen> with WidgetsBindingObserv
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Align ingredients within the square',
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                  Text(
+                    _mode == _ScanMode.ingredient
+                        ? 'Align ingredients within the square'
+                        : 'Point camera at a product barcode',
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                 ],
               ),
@@ -207,8 +288,8 @@ class _ScannerScreenState extends State<ScannerScreen> with WidgetsBindingObserv
               ),
             ),
 
-          // Top controls
-          if (_result == null && !_isAnalyzing)
+          // Top controls (ingredient mode only)
+          if (_mode == _ScanMode.ingredient && _result == null && !_isAnalyzing)
             Positioned(
               top: 60,
               right: 24,
@@ -226,8 +307,8 @@ class _ScannerScreenState extends State<ScannerScreen> with WidgetsBindingObserv
               ),
             ),
 
-          // Capture button
-          if (_result == null && !_isAnalyzing)
+          // Capture button (ingredient mode only)
+          if (_mode == _ScanMode.ingredient && _result == null && !_isAnalyzing)
             Positioned(
               bottom: 100,
               left: 0,
@@ -287,6 +368,90 @@ class _ScannerScreenState extends State<ScannerScreen> with WidgetsBindingObserv
     );
   }
 }
+
+class _ModeSwitcher extends StatelessWidget {
+  final _ScanMode mode;
+  final ValueChanged<_ScanMode> onChanged;
+
+  const _ModeSwitcher({required this.mode, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: Colors.black54,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: Colors.white12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _ModeChip(
+              icon: Icons.list_alt_rounded,
+              label: 'Ingredients',
+              selected: mode == _ScanMode.ingredient,
+              onTap: () => onChanged(_ScanMode.ingredient),
+            ),
+            const SizedBox(width: 6),
+            _ModeChip(
+              icon: Icons.qr_code_scanner_rounded,
+              label: 'Barcode',
+              selected: mode == _ScanMode.barcode,
+              onTap: () => onChanged(_ScanMode.barcode),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ModeChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ModeChip({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.magenta : Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(
+          children: [
+            Icon(icon,
+                color: selected ? Colors.white : Colors.white70, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : Colors.white70,
+                fontWeight: selected ? FontWeight.w900 : FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 
 class _Corner extends StatelessWidget {
   final bool top, left;

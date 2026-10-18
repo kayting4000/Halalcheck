@@ -42,59 +42,44 @@
 
 ---
 
-## 🔌 API Integration Details
+## 🔌 Scanner Architecture (API-Free)
 
-### 1. **Groq API (AI Analysis)**
+### 1. **Halal Analysis — Fully Offline, No API Key**
 
-**Service File**: `lib/services/gemini_service.dart`
+The previous cloud vision-LLM (Groq/Gemini) integration has been **removed**.
+Scanning now works with **no API keys**, **no free-tier limits**, and even
+**offline** for the ingredient + verdict path.
 
-**API Details**:
-- **Endpoint**: `https://api.groq.com/openai/v1/chat/completions`
-- **Model**: `meta-llama/llama-4-scout-17b-16e-instruct`
-- **API Key**: `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`
+**Service Files**:
+- `lib/services/ocr_service.dart` — on-device OCR (Google ML Kit)
+- `lib/services/halal_engine.dart` — offline halal rules engine
+- `lib/services/barcode_service.dart` — Open Food Facts barcode lookup
 
-**Three Analysis Methods**:
+**Ingredient mode (offline):**
+1. Camera photo → **ML Kit OCR** (`google_mlkit_text_recognition`) reads the
+   ingredient label **on-device** (no network, no key).
+2. **HalalEngine** matches ingredients against a curated haram / doubtful /
+   halal marker database and returns a deterministic verdict.
 
-#### a) `analyzeIngredients(imageBytes)`
-- **Purpose**: Analyze ingredient list from product label
-- **Input**: Image bytes (JPEG/PNG)
-- **Process**:
-  1. Converts image to base64
-  2. Sends to Groq API with vision capabilities
-  3. AI identifies all ingredients
-  4. Determines halal status based on Islamic dietary laws
-- **Output**: JSON with status, ingredients list, and purity report
+**Barcode mode (free API):**
+1. `mobile_scanner` (ML Kit) reads the barcode.
+2. **Open Food Facts** (`world.openfoodfacts.org`) returns the product's
+   ingredient text — **free, no API key**.
+3. **HalalEngine** produces the verdict.
 
-#### b) `analyzeProductVisual(imageBytes)`
-- **Purpose**: Identify product by appearance/packaging
-- **Input**: Image of product
-- **Process**:
-  1. AI recognizes product from visual features
-  2. Identifies known ingredients for that product type
-  3. Determines halal compliance
-- **Output**: Product identification + halal analysis
-
-#### c) `analyzeBarcodeProduct(barcode)`
-- **Purpose**: Analyze product by barcode number
-- **Input**: Barcode string
-- **Process**:
-  1. AI searches its knowledge base for barcode
-  2. Identifies product and typical ingredients
-  3. Provides halal assessment
-- **Output**: Product info + halal status
-
-**Response Format**:
+**Response Format** (unchanged, reused by the existing UI):
 ```json
 {
   "status": "halal|haram|doubtful",
   "reason": "Overall summary",
-  "ingredients": [
-    {"name": "Sugar", "status": "halal"},
-    {"name": "Gelatin", "status": "haram"}
-  ],
+  "ingredients": [ { "name": "Sugar", "status": "halal" } ],
   "purityReport": "Detailed explanation..."
 }
 ```
+
+> ⚠️ **Security:** The old hardcoded Groq API key has been removed from the
+> codebase and this document. If it was ever pushed to a public repo, **revoke
+> it in the Groq console** immediately.
 
 ---
 
@@ -479,7 +464,10 @@ StreamBuilder<List<HalalLocation>>(
 ### Key Files
 - `main.dart` - App entry point
 - `auth_provider.dart` - Authentication state management
-- `gemini_service.dart` - AI API integration
+- `gemini_service.dart` → *(removed)* replaced by:
+  - `halal_engine.dart` - offline halal rules engine (no API)
+  - `ocr_service.dart` - on-device OCR (ML Kit)
+  - `barcode_service.dart` - Open Food Facts barcode lookup
 - `location_service.dart` - Firestore operations
 - `map_screen.dart` - Interactive map
 - `scanner_screen.dart` - Camera & AI analysis
