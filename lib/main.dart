@@ -46,7 +46,7 @@ class HalalScannerApp extends StatelessWidget {
                 ),
               );
             }
-            if (auth.user == null) {
+            if (auth.user == null && !auth.isGuest) {
               return const SignInScreen();
             }
             if (auth.isAdmin) {

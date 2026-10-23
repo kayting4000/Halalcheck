@@ -219,7 +219,7 @@ class _AppDrawer extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    auth.user?.isAnonymous == true
+                    auth.isGuest
                         ? 'Guest User'
                         : auth.user?.email ?? 'Guest User',
                     style: TextStyle(
@@ -227,7 +227,7 @@ class _AppDrawer extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.6),
                     ),
                   ),
-                  if (auth.user?.isAnonymous == true) ...[
+                  if (auth.isGuest) ...[
                     const SizedBox(height: 6),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

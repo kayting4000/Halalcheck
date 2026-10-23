@@ -1,0 +1,13 @@
+﻿=== flutter bin ===
+cache
+internal
+mingit
+dart
+dart.bat
+flutter
+flutter-dev
+flutter-dev.bat
+flutter.bat
+=== dart-sdk cache ===
+True
+=== cfg.log last 20 ===

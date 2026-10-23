@@ -107,7 +107,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
               const Spacer(),
-              if (auth.user == null)
+              if (auth.user == null && !auth.isGuest)
                 GestureDetector(
                   onTap: auth.login,
                   child: Container(
@@ -125,7 +125,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const Icon(Icons.person_rounded, color: AppColors.magentaLight, size: 14),
                       const SizedBox(width: 6),
                       Text(
-                        auth.user!.email?.split('@')[0] ?? '',
+                        auth.isGuest ? 'Guest' : (auth.user?.email?.split('@')[0] ?? ''),
                         style: const TextStyle(fontSize: 10, color: Colors.white54, fontWeight: FontWeight.w700),
                         overflow: TextOverflow.ellipsis,
                       ),

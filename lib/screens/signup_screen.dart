@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../providers/auth_provider.dart';
 import '../widgets/glass_container.dart';
 
@@ -28,6 +29,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
+  String _formatError(dynamic e) {
+    if (e is FirebaseAuthException) {
+      switch (e.code) {
+        case 'email-already-in-use':
+          return 'This email is already registered. Please sign in instead.';
+        case 'invalid-email':
+          return 'Please enter a valid email address.';
+        case 'weak-password':
+          return 'Password must be at least 6 characters.';
+        case 'operation-not-allowed':
+          return 'Email/Password sign-up is disabled in Firebase.';
+        case 'network-request-failed':
+          return 'Network error. Please check your internet connection.';
+        case 'too-many-requests':
+          return 'Too many attempts. Please try again later.';
+        default:
+          return e.message ?? e.code;
+      }
+    }
+    return e.toString().replaceFirst('Exception: ', '');
+  }
   Future<void> _signUp() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -58,7 +80,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        setState(() => _error = 'Sign up failed. Email may already be in use.');
+        setState(() => _error = _formatError(e));
       }
     } finally {
       if (mounted) setState(() => _loading = false);

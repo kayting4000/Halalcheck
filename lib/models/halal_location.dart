@@ -101,12 +101,20 @@ class AnalysisResult {
   final String reason;
   final List<IngredientResult> ingredients;
   final String purityReport;
+  final String? productName;
+  final String? brand;
+  final String? imageUrl;
+  final bool isCertifiedHalal;
 
   AnalysisResult({
     required this.status,
     required this.reason,
     required this.ingredients,
     required this.purityReport,
+    this.productName,
+    this.brand,
+    this.imageUrl,
+    this.isCertifiedHalal = false,
   });
 
   factory AnalysisResult.fromJson(Map<String, dynamic> json) {
@@ -117,6 +125,10 @@ class AnalysisResult {
           .map((i) => IngredientResult.fromJson(i))
           .toList(),
       purityReport: json['purityReport'] ?? '',
+      productName: json['productName'],
+      brand: json['brand'],
+      imageUrl: json['imageUrl'],
+      isCertifiedHalal: json['isCertifiedHalal'] ?? false,
     );
   }
 

@@ -1,0 +1,10 @@
+﻿=== android-sdk tree ===
+C:\Users\MSU\.cline\data\workspaces\chat\_toolchain\android-sdk\cmdline-tools
+C:\Users\MSU\.cline\data\workspaces\chat\_toolchain\android-sdk\cmdline-tools\latest
+=== dart.exe exists ===
+True
+=== flutter version file ===
+=== jbr release ===
+JAVA_VERSION="25.0.3"
+=== disk free GB ===
+238.7

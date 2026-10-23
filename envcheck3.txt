@@ -1,0 +1,28 @@
+﻿=== status.txt ===
+checked @ 17:14:21 remaining_pwsh_curl=1
+=== probe.txt ===
+NOW=17:13:02 flutter=202.8 (~11%) cmdline=- jdk=-
+BUILD START 10/13/2026 17:11:20 | [17:11:20] downloading https://storage.googleapis.com/flutter_infra_release/releases/stable/windows/flutter_windows_3.47.7-stable.zip
+=== build.log (last 40) ===
+BUILD START 10/14/2026 13:35:12
+[13:35:12] Using JBR: C:\Program Files\Android\Android Studio\jbr
+[13:35:12] exists: flutter.zip
+[13:35:12] exists: cmdline.zip
+[13:35:12] extracting flutter.zip -> C:\Users\MSU\.cline\data\workspaces\chat\_toolchain
+[13:38:53] flutter.bat = C:\Users\MSU\.cline\data\workspaces\chat\_toolchain\flutter\bin\flutter.bat
+[13:38:53] extracting cmdline.zip -> C:\Users\MSU\.cline\data\workspaces\chat\_toolchain\cmdtmp
+[13:38:54] sdkmanager = C:\Users\MSU\.cline\data\workspaces\chat\_toolchain\android-sdk\cmdline-tools\latest\bin\sdkmanager.bat
+[13:38:54] accepting licenses
+[13:41:02] sdkmanager install platform-tools
+[13:43:53] installed platform-tools (exit=1)
+[13:43:53] sdkmanager install platforms;android-34
+[13:44:08] installed platforms;android-34 (exit=1)
+[13:44:08] sdkmanager install platforms;android-35
+[13:44:12] installed platforms;android-35 (exit=1)
+[13:44:12] sdkmanager install build-tools;34.0.0
+[13:46:20] installed build-tools;34.0.0 (exit=1)
+[13:46:20] sdkmanager install build-tools;35.0.0
+[13:48:28] installed build-tools;35.0.0 (exit=1)
+[13:48:28] flutter config
+[13:48:28] FATAL: Building flutter tool... 
+[13:48:28] BUILD END

@@ -1,0 +1,81 @@
+﻿170:   /// The option name for a custom VM Service port.
+171:   static const vmServicePortOption = 'vm-service-port';
+172: 
+173:   /// The option name for a custom DevTools server address.
+174:   static const kDevToolsServerAddress = 'devtools-server-address';
+175: 
+176:   /// The flag name for whether to launch the DevTools or not.
+177:   static const kEnableDevTools = 'devtools';
+178: 
+179:   /// The flag name for whether or not to use ipv6.
+180:   static const ipv6Flag = 'ipv6';
+181: 
+182:   /// The dart define used for adding the Flutter version at runtime.
+183:   @visibleForTesting
+184:   static const flutterVersionDefine = 'FLUTTER_VERSION';
+185: 
+186:   /// The dart define used for adding the Flutter channel at runtime.
+187:   @visibleForTesting
+188:   static const flutterChannelDefine = 'FLUTTER_CHANNEL';
+189: 
+190:   /// The dart define used for adding the Flutter git URL at runtime.
+191:   @visibleForTesting
+192:   static const flutterGitUrlDefine = 'FLUTTER_GIT_URL';
+193: 
+194:   /// The dart define used for adding the Flutter framework revision at runtime.
+195:   @visibleForTesting
+196:   static const flutterFrameworkRevisionDefine = 'FLUTTER_FRAMEWORK_REVISION';
+197: 
+198:   /// The dart define used for adding the Flutter engine revision at runtime.
+199:   @visibleForTesting
+200:   static const flutterEngineRevisionDefine = 'FLUTTER_ENGINE_REVISION';
+201: 
+202:   /// The dart define used for adding the Dart version at runtime.
+203:   @visibleForTesting
+204:   static const flutterDartVersionDefine = 'FLUTTER_DART_VERSION';
+205: 
+206:   /// List of all dart defines used for adding Flutter version information at runtime
+207:   @visibleForTesting
+208:   static const flutterVersionDartDefines = <String>[
+209:     flutterVersionDefine,
+210:     flutterChannelDefine,
+211:     flutterGitUrlDefine,
+212:     flutterFrameworkRevisionDefine,
+213:     flutterEngineRevisionDefine,
+214:     flutterDartVersionDefine,
+215:   ];
+216: 
+217:   @override
+218:   ArgParser get argParser => _argParser;
+219:   final _argParser = ArgParser(
+220:     usageLineLength: globals.outputPreferences.wrapText
+221:         ? globals.outputPreferences.wrapColumn
+222:         : null,
+223:   );
+224: 
+225:   @override
+226:   FlutterCommandRunner? get runner => super.runner as FlutterCommandRunner?;
+227: 
+228:   var _requiresPubspecYaml = false;
+229: 
+230:   /// Whether this command uses the 'target' option.
+231:   var _usesTargetOption = false;
+232: 
+233:   var _usesPubOption = false;
+234: 
+235:   var _usesPortOption = false;
+236: 
+237:   var _usesIpv6Flag = false;
+238: 
+239:   var _usesFatalWarnings = false;
+240: 
+241:   DeprecationBehavior get deprecationBehavior => DeprecationBehavior.none;
+242: 
+243:   bool get shouldRunPub => _usesPubOption && boolArg('pub');
+244: 
+245:   bool get outputMachineFormat =>
+246:       argParser.options.containsKey(FlutterGlobalOptions.kMachineFlag) &&
+247:       boolArg(FlutterGlobalOptions.kMachineFlag);
+248: 
+249:   bool get shouldUpdateCache => true;
+250: 
