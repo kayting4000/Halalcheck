@@ -1,4 +1,0 @@
-﻿xml size: 421568
-build-tools_r34-windows.zip
-platform-35_r02.zip
-platform-36_r02.zip

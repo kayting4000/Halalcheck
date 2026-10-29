@@ -1,8 +1,7 @@
-# Phase 2 — Blockchain Integration Plan (Deferred)
+# Phase 2 — Blockchain Integration Plan
 
-> **Status:** Not yet implemented. Phase 1 (API-free scanner) is complete.
-> This document captures the agreed design so Phase 2 can start without
-> re-planning.
+> **Status:** In Progress. Phase 1 (API-free scanner) is complete.
+> Smart contract, Dart service, and UI integration implemented. Awaiting deployment decisions.
 
 ## Goal
 
@@ -43,6 +42,25 @@ Scan → Phase-1 engine → AnalysisResult
                         └─► (optional) query HalalRegistry on-chain
                               → "Blockchain Verified" badge + audit trail
 ```
+
+## Implementation Status
+
+### ✅ Completed
+- `contracts/HalalRegistry.sol` — Solidity contract with `issueCertificate`, `revokeCertificate`, `verifyCertificate`, `isCertifier`
+- `lib/services/blockchain_config.dart` — Feature flag, RPC URL, contract address, chain ID
+- `lib/services/blockchain_service.dart` — Read-only Web3 client, `verifyCertificateByBarcode()`, pure-Dart keccak256
+- `lib/screens/scanner_screen.dart` — Blockchain check after barcode lookup, "Blockchain Verified" badge, API info entry
+- `lib/screens/admin_screen.dart` — Blockchain registry status card in Tools tab
+- `test/blockchain_test.dart` — Unit tests for result logic, config, keccak256 test vectors
+- `pubspec.yaml` — Added `web3dart: ^2.7.3`
+- `CHANGELOG.md` — Phase 2 section added
+
+### 🔲 Remaining (Deployment Decisions Needed)
+1. Deploy `HalalRegistry` to Polygon Amoy testnet → update `contractAddress` in `blockchain_config.dart`
+2. Replace demo RPC URL with production Infura/Alchemy/QuickNode endpoint
+3. Set up backend Cloud Function for certificate writes (no private keys in app)
+4. Add certifier addresses via `addCertifier()` (owner only)
+5. Choose: Polygon mainnet vs. Amoy testnet for production
 
 ## Guardrails
 

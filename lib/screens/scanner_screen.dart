@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../services/ocr_service.dart';
 import '../services/barcode_service.dart';
 import '../services/halal_engine.dart';
+import '../services/blockchain_service.dart';
 import '../models/halal_location.dart';
 import '../widgets/app_theme.dart';
 
@@ -33,6 +34,7 @@ class _ScannerScreenState extends State<ScannerScreen>
   final MobileScannerController _barcodeController =
       MobileScannerController(detectionSpeed: DetectionSpeed.noDuplicates);
   bool _barcodeHandled = false;
+  BlockchainVerificationResult? _blockchainResult;
 
   late final AnimationController _laserController;
   late final Animation<double> _laserAnimation;
@@ -49,6 +51,7 @@ class _ScannerScreenState extends State<ScannerScreen>
       CurvedAnimation(parent: _laserController, curve: Curves.easeInOut),
     );
     _initCamera();
+    _initBlockchain();
   }
 
   Future<void> _initCamera() async {
@@ -180,11 +183,24 @@ class _ScannerScreenState extends State<ScannerScreen>
       _isAnalyzing = true;
       _result = null;
       _error = null;
+      _blockchainResult = null;
       _status = 'Looking up Product in Database...';
     });
     try {
       final result = await BarcodeService.lookupBarcode(barcode);
       if (mounted) setState(() => _result = result);
+      // Check on-chain halal certificate after product lookup
+      if (mounted) {
+        setState(() {
+          _status = 'Verifying On-Chain Certificate...';
+        });
+        _blockchainResult = await BlockchainService.verifyCertificateByBarcode(
+          barcode,
+        );
+        if (mounted) {
+          setState(() {});
+        }
+      }
     } catch (e) {
       setState(() => _error = e.toString().replaceFirst('Exception: ', ''));
       Future.delayed(const Duration(seconds: 3), () {
@@ -193,6 +209,11 @@ class _ScannerScreenState extends State<ScannerScreen>
     } finally {
       if (mounted) setState(() => _isAnalyzing = false);
     }
+  }
+
+  /// Initialize blockchain service on first scan.
+  Future<void> _initBlockchain() async {
+    await BlockchainService.init();
   }
 
   void _showManualBarcodeDialog() {
@@ -334,6 +355,12 @@ class _ScannerScreenState extends State<ScannerScreen>
                 desc: 'Recognizes official certification labels including JAKIM (Malaysia), BPJPH (Indonesia), MUI, and European Halal authorities.',
                 badge: 'Verified',
               ),
+              SizedBox(height: 12),
+              _ApiItem(
+                title: 'On-Chain Halal Registry (Phase 2)',
+                desc: 'Immutable certificate registry on Polygon Amoy testnet. Tamper-proof verification with "Blockchain Verified" badge.',
+                badge: 'Read-Only',
+              ),
             ],
           ),
         ),
@@ -370,6 +397,7 @@ class _ScannerScreenState extends State<ScannerScreen>
       _result = null;
       _error = null;
       _barcodeHandled = false;
+      _blockchainResult = null;
     });
     _controller?.resumePreview();
   }
@@ -635,7 +663,7 @@ class _ScannerScreenState extends State<ScannerScreen>
 
           // Result Bottom Sheet
           if (_result != null)
-            _ResultSheet(result: _result!, onReset: _reset),
+            _ResultSheet(result: _result!, onReset: _reset, blockchainResult: _blockchainResult),
 
           // Error Notification Banner
           if (_error != null)
@@ -920,8 +948,13 @@ class _ApiItem extends StatelessWidget {
 class _ResultSheet extends StatelessWidget {
   final AnalysisResult result;
   final VoidCallback onReset;
+  final BlockchainVerificationResult? blockchainResult;
 
-  const _ResultSheet({required this.result, required this.onReset});
+  const _ResultSheet({
+    required this.result,
+    required this.onReset,
+    this.blockchainResult,
+  });
 
   Color get _statusColor {
     switch (result.status) {
@@ -1071,6 +1104,19 @@ class _ResultSheet extends StatelessWidget {
                                 const SizedBox(width: 4),
                                 Text(
                                   'CERTIFIED HALAL ON PACKAGING',
+                                  style: TextStyle(color: const Color(0xFF34D399).withValues(alpha: 0.9), fontSize: 9, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ],
+                          if (blockchainResult?.showBadge == true) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Icon(Icons.security_rounded, color: Color(0xFF34D399), size: 14),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'BLOCKCHAIN VERIFIED',
                                   style: TextStyle(color: const Color(0xFF34D399).withValues(alpha: 0.9), fontSize: 9, fontWeight: FontWeight.bold),
                                 ),
                               ],

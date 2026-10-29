@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/halal_location.dart';
 import '../services/location_service.dart';
+import '../services/blockchain_config.dart';
 import '../widgets/app_theme.dart';
 import '../providers/auth_provider.dart';
 import 'suggest_location_screen.dart';
@@ -322,6 +323,13 @@ class _ToolsTab extends StatelessWidget {
             const SnackBar(content: Text('Reports feature coming soon')),
           ),
         ),
+        _ToolCard(
+          icon: Icons.security_rounded,
+          title: 'Blockchain Registry',
+          subtitle: 'On-chain halal certificate verification status',
+          color: Colors.indigo,
+          onTap: () => _showBlockchainStatus(context),
+        ),
       ],
     );
   }
@@ -401,6 +409,47 @@ class _ToolsTab extends StatelessWidget {
       ),
     );
   }
+}
+
+void _showBlockchainStatus(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      backgroundColor: const Color(0xFF1A1A1A),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: const Row(
+        children: [
+          Icon(Icons.security_rounded, color: Colors.indigo),
+          SizedBox(width: 10),
+          Text('Blockchain Registry Status', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900)),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _StatRow(label: 'Enabled', value: BlockchainConfig.enabled ? 'Yes' : 'No'),
+          _StatRow(label: 'Network', value: 'Polygon Amoy Testnet'),
+          _StatRow(label: 'Chain ID', value: '${BlockchainConfig.chainId}'),
+          _StatRow(label: 'Contract', value: BlockchainConfig.contractAddress.isEmpty ? 'Not deployed' : BlockchainConfig.contractAddress),
+          _StatRow(label: 'RPC', value: BlockchainConfig.rpcUrl),
+          _StatRow(label: 'Mode', value: 'Read-Only (no write from app)'),
+          const SizedBox(height: 16),
+          Text(
+            'Certificate writes must be relayed through a backend Cloud Function. '
+            'The mobile app only performs public read queries.',
+            style: TextStyle(color: Colors.white54, fontSize: 11, fontStyle: FontStyle.italic),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('CLOSE', style: TextStyle(color: AppColors.magentaLight, fontWeight: FontWeight.bold)),
+        ),
+      ],
+    ),
+  );
 }
 
 class _ToolCard extends StatelessWidget {

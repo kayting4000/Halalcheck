@@ -110,6 +110,35 @@ APK will be located at: `build/app/outputs/flutter-apk/app-release.apk`
 
 ---
 
+## Phase 2 — Blockchain Integration (In Progress)
+
+### 🔗 On-Chain Halal Certificate Registry
+
+#### New Files
+- `contracts/HalalRegistry.sol` — Solidity smart contract for immutable halal certificate storage
+- `lib/services/blockchain_config.dart` — Configuration (feature flag, RPC URL, contract address)
+- `lib/services/blockchain_service.dart` — Read-only Web3 client + pure-Dart keccak256
+- `test/blockchain_test.dart` — Unit tests for result logic, config, and keccak256
+
+#### Modified Files
+- `pubspec.yaml` — Added `web3dart: ^2.7.3` dependency
+- `lib/screens/scanner_screen.dart` — Blockchain verification after barcode lookup; "Blockchain Verified" badge; API info dialog entry
+- `lib/screens/admin_screen.dart` — Blockchain registry status card in Tools tab
+
+#### Design Decisions
+- **Read-only from app**: No private keys in the mobile app. Certificate writes (issue/revoke) are performed by authorized certifiers through a backend relay (e.g., Cloud Function).
+- **Feature flag**: `BlockchainConfig.enabled` — when false, the app falls back to Phase 1 offline analysis only.
+- **Network**: Polygon Amoy testnet (chainId 80002). Replace RPC URL with your own Infura/Alchemy/QuickNode endpoint for production.
+- **Product ID**: `keccak256("halal:barcode:<barcode>")` — deterministic mapping from barcode to on-chain record.
+
+#### Open Decisions (from BLOCKCHAIN_PLAN.md)
+1. Public chain (Polygon mainnet) vs. private/permissioned chain?
+2. Who are the "certifier" identities allowed to write? (access control)
+3. Wallet/key custody for admin writes (Thirdweb vs. custom backend signer)?
+4. Should venue verification also be mirrored, or only product certs?
+
+---
+
 **Project**: Halal Scanner  
 **Firebase Project**: halalscanner-c7667  
 **Admin Email**: habibunnajalkaytin@gmail.com
