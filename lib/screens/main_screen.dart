@@ -9,6 +9,8 @@ import 'guidelines_screen.dart';
 import 'about_screen.dart';
 import 'admin_screen.dart';
 import 'signin_screen.dart';
+import 'newsletter_screen.dart';
+import 'dmca_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -281,6 +283,23 @@ class _AppDrawer extends StatelessWidget {
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutScreen()));
+                    },
+                  ),
+                  const Divider(color: Colors.white12, height: 32),
+                  _DrawerItem(
+                    icon: Icons.email_rounded,
+                    title: 'Newsletter',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const NewsletterScreen()));
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: Icons.copyright_rounded,
+                    title: 'Report Copyright (DMCA)',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const DmcaScreen()));
                     },
                   ),
                   if (auth.isAdmin)

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -20,12 +20,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String? _error;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  String? _birthYear;
+  bool _agreeToAgePolicy = false;
+  late final TextEditingController _birthYearController;
 
   @override
+  void initState() {
+    super.initState();
+    _birthYearController = TextEditingController();
+  }
+
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _birthYearController.dispose();
     super.dispose();
   }
 
@@ -70,6 +79,21 @@ class _SignUpScreenState extends State<SignUpScreen> {
       return;
     }
 
+
+    // ---- COPPA age gate ----
+    if (_birthYearController.text.trim().isEmpty) {
+      setState(() => _error = 'Please enter your birth year.');
+      return;
+    }
+    if (!_agreeToAgePolicy) {
+      setState(() => _error = 'You must be 13 or older to use this app.');
+      return;
+    }
+    final birthYear = int.tryParse(_birthYearController.text.trim());
+    if (birthYear == null || DateTime.now().year - birthYear < 13) {
+      setState(() => _error = 'This app is only for users 13 years of age or older.');
+      return;
+    }
     setState(() {
       _loading = true;
       _error = null;
@@ -280,6 +304,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                         _obscureConfirmPassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
                                         color: Colors.white.withValues(alpha: 0.5),
                                       ),
+
+
                                       onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                                     ),
                                     border: OutlineInputBorder(
@@ -296,6 +322,55 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     ),
                                   ),
                                 ),
+
+
+                                // ---- COPPA age verification ----
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'How old are you?',
+                                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    TextField(
+                                      controller: _birthYearController,
+                                      keyboardType: TextInputType.number,
+                                      decoration: InputDecoration(
+                                        hintText: 'Birth year',
+                                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12),
+                                        filled: true,
+                                        fillColor: Colors.white.withValues(alpha: 0.05),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                          borderSide: const BorderSide(color: Color(0xFF8E0A57), width: 2),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        Checkbox(
+                                          value: _agreeToAgePolicy,
+                                          onChanged: (v) => setState(() => _agreeToAgePolicy = v ?? false),
+                                        ),
+                                        Text(
+                                          'I am 13 or older and agree to the Privacy Policy.',
+                                          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
                                 if (_error != null) ...[
                                   const SizedBox(height: 12),
                                   Text(

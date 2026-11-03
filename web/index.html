@@ -41,6 +41,17 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
+  <div id="consent-banner" role="dialog" aria-live="polite" style="position:fixed;bottom:0;left:0;right:0;background:#13010C;color:#fff;padding:16px;z-index:9999;font-family:sans-serif;border-top:2px solid #8E0A57;">
+    <p style="margin:0;font-size:14px;">We use third-party services (Firebase, Google Sign-In, Open Food Facts, OpenStreetMap) that may process your data. By using this site you consent to our <a href="https://github.com/kayting4000/Halalcheck/blob/main/docs/PRIVACY_POLICY.md" style="color:#FF6EC7;">Privacy Policy</a>. <button id="consent-accept" style="background:#8E0A57;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;margin-left:8px;">Accept</button></p>
+  </div>
+  <script>
+    (function() {
+      var banner = document.getElementById('consent-banner');
+      var accept = document.getElementById('consent-accept');
+      if (localStorage.getItem('halalcheck_consent')) { banner.style.display = 'none'; }
+      accept.addEventListener('click', function() { localStorage.setItem('halalcheck_consent', '1'); banner.style.display = 'none'; });
+    })();
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
